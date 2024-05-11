@@ -1,55 +1,43 @@
 #!/bin/bash
 
-# Função para instalar pacotes via apt
-install_package_apt() {
+# Função genérica para instalar pacotes
+install_package() {
     echo "Instalando $1..."
     sudo apt install -y $1
-    echo "$1 instalado com sucesso!"
-}
-
-# Função para instalar pacotes via apt-get
-install_package_apt_get() {
-    echo "Instalando $1..."
-    sudo apt-get install -y $1
-    echo "$1 instalado com sucesso!"
-}
-
-# Função para instalar pacotes via Snap
-install_snap_package() {
-    echo "Instalando $1 via Snap..."
-    sudo snap install -y $1
-    echo "$1 instalado com sucesso!"
+    if [ $? -eq 0 ]; then
+        echo "$1 instalado com sucesso!"
+    else
+        echo "Erro ao instalar $1. Verifique a conexão com a internet ou os repositórios."
+    fi
 }
 
 # Função para instalar Oh My Zsh
 install_oh_my_zsh() {
     echo "Instalando Oh My Zsh..."
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-    echo "Oh My Zsh instalado com sucesso!"
-}
-
-# Função para clonar o repositório zsh-autosuggestions
-clone_zsh_autosuggestions() {
-    echo "Clonando zsh-autosuggestions..."
-    if [ -z "$ZSH_CUSTOM" ]; then
-        git clone https://github.com/zsh-users/zsh-autosuggestions ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+    if [ $? -eq 0 ]; then
+        echo "Oh My Zsh instalado com sucesso!"
     else
-        git clone https://github.com/zsh-users/zsh-autosuggestions $ZSH_CUSTOM/plugins/zsh-autosuggestions
+        echo "Erro ao instalar Oh My Zsh. Verifique a conexão com a internet ou o script de instalação."
     fi
-    echo "zsh-autosuggestions clonado com sucesso!"
 }
 
-# Função para clonar o repositório zsh-syntax-highlighting
-clone_zsh_syntax_highlighting() {
-    echo "Clonando zsh-syntax-highlighting..."
+# Função para clonar repositórios
+clone_repository() {
+    echo "Clonando $2..."
     if [ -z "$ZSH_CUSTOM" ]; then
-        git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+        git clone $1 ~/.oh-my-zsh/custom/plugins/$2
     else
-        git clone https://github.com/zsh-users/zsh-syntax-highlighting.git $ZSH_CUSTOM/plugins/zsh-syntax-highlighting
+        git clone $1 $ZSH_CUSTOM/plugins/$2
     fi
-    echo "zsh-syntax-highlighting clonado com sucesso!"
+    if [ $? -eq 0 ]; then
+        echo "$2 clonado com sucesso!"
+    else
+        echo "Erro ao clonar $2. Verifique a conexão com a internet ou o repositório."
+    fi
 }
 
+# Função para adicionar configurações ao arquivo .zshrc
 add_to_zshrc() {
     echo "Adicionando configurações ao arquivo .zshrc..."
     cat >> ~/.zshrc <<EOF
@@ -175,47 +163,38 @@ EOF
     echo "Configurações adicionadas ao arquivo .zshrc com sucesso!"
 }
 
-# Função para configurar as variáveis de ambiente no arquivo .zshrc
-configure_java_environment() {
-    echo "Configurando variáveis de ambiente para o Java..."
 
-    # Define o JAVA_HOME
-    JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
-    echo "export JAVA_HOME=$JAVA_HOME" >> ~/.zshrc
+# Instalação de pacotes essenciais
+install_package wget
+install_package gpg
+install_package curl
+install_package apt-transport-https
+install_package software-properties-common
+install_package ca-certificates
 
-    # Adiciona o diretório bin do Java ao PATH
-    echo "export PATH=\$PATH:\$JAVA_HOME/bin" >> ~/.zshrc
-
-    echo "Variáveis de ambiente configuradas com sucesso no arquivo .zshrc!"
-}
-
-## Instalando pacotes essenciais ##
-install_package_apt_get wget
-install_package_apt_get gpg
-install_package_apt_get curl
-install_package_apt_get apt-transport-https
-install_package_apt software-properties-common
-install_package_apt ca-certificates
-
-## Atualizando repositorios ##
-
-echo "Atualizando repositorios"
+# Atualização de repositórios
+echo "Atualizando repositórios..."
 sudo apt update
-echo "Repositorios atualizados"
 sudo apt upgrade -y
+echo "Repositórios atualizados."
 
-## Instalando zsh ##
-install_package_apt zsh
+# Instalação do Google Chrome
+echo "Instalando Google Chrome..."
+sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
+sudo apt update
+install_package google-chrome-stable
+
+# Instalação do zsh
+install_package zsh
 chsh -s $(which zsh)
 
-## Instalando Oh My Zsh ##
+# Instalação do Oh My Zsh
 install_oh_my_zsh
 
-## Instalando o git ##
+# Instalação do git
 install_package git
-git --version
 
-## Configurando o git ##
+# Configuração do git
 echo "Configurando Git..."
 read -p "Informe seu nome: " git_name
 read -p "Informe seu email: " git_email
@@ -223,93 +202,60 @@ git config --global user.name "$git_name"
 git config --global user.email "$git_email"
 echo "Git configurado com sucesso!"
 
-## Clonando o repositório zsh-autosuggestions ##
-clone_zsh_autosuggestions
+# Clonagem do repositório zsh-autosuggestions
+clone_repository https://github.com/zsh-users/zsh-autosuggestions.git zsh-autosuggestions
 
-## Clonando o repositório zsh-syntax-highlighting ##
-clone_zsh_syntax_highlighting
+# Clonagem do repositório zsh-syntax-highlighting
+clone_repository https://github.com/zsh-users/zsh-syntax-highlighting.git zsh-syntax-highlighting
 
-## Adicionando configurações ao arquivo .zshrc ##
-add_to_zshrc
-
-
-## Istalando google chrome ##
-echo "Baixando a chave"
-sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
-echo "Chave baixada"
-echo "Atualizando repositorios"
-sudo apt-get update
-install_package google-chrome-stable
-
-## Instalar VsCode ##
+# Instalação do VsCode
+echo "Instalando VsCode..."
 wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
 sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
 echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" | sudo tee /etc/apt/sources.list.d/vscode.list > /dev/null
 rm -f packages.microsoft.gpg
 sudo apt update
-install_package_apt code
+install_package code
 
-## Instalando Dbeaver ##
+# Instalação do Dbeaver
+echo "Instalando Dbeaver..."
 echo "deb https://dbeaver.io/debs/dbeaver-ce /" | sudo tee /etc/apt/sources.list.d/dbeaver.list
 wget -O - https://dbeaver.io/debs/dbeaver.gpg.key | sudo apt-key add -
-sudo apt-get update
-install_package_apt dbeaver-ce
+sudo apt update
+install_package dbeaver-ce
 
-## Instalando o Slack ##
-install_snap_package slack
+# Instalação do Slack
+echo "Instalando Slack..."
+sudo snap install slack
 
-## Instalando o Spotify ##
-install_snap_package spotify
+# Instalação do Spotify
+echo "Instalando Spotify..."
+sudo snap install spotify
 
-## Instalar IntelliJ IDEA Ultimate Edition ##
-install_snap_package intellij-idea-ultimate --classic
+# Instalação do IntelliJ IDEA Ultimate Edition
+echo "Instalando IntelliJ IDEA Ultimate Edition..."
+sudo snap install intellij-idea-ultimate --classic
 
-## Instalar o Node Version Manager (NVM) ##
+# Instalação do Node Version Manager (NVM)
+echo "Instalando Node Version Manager (NVM)..."
 wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 
-## Instalação do Docker ##
-echo "Adicionando chave GPG do Docker..."
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+# Adição de configurações ao arquivo .zshrc
+add_to_zshrc
 
-echo "Adicionando repositório do Docker ao sistema..."
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-echo "Atualizando o sistema..."
-sudo apt update
-
-echo "Verificando as versões disponíveis do Docker..."
-apt-cache policy docker-ce
-
+# Instalação do Docker
 echo "Instalando Docker..."
-install_package_apt docker-ce
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt update
+install_package docker-ce
 
-echo "Verificando o status do serviço Docker..."
-sudo systemctl status docker
-
-## Configuração para executar o Docker sem sudo ##
-
+# Configuração para executar o Docker sem sudo
 echo "Adicionando o usuário ao grupo docker..."
 sudo usermod -aG docker ${USER}
-
 echo "Recarregando configurações do grupo..."
 su - ${USER}
-
 echo "Verificando os grupos do usuário..."
 groups
 
-## Instalação do Java ##
-install_package_apt_get openjdk-11-jdk
-
-# Configura as variáveis de ambiente
-configure_java_environment
-
-# Recarrega o arquivo .zshrc
-echo "Recarregando o arquivo .zshrc..."
-source ~/.zshrc
-
-# Verifica as variáveis de ambiente JAVA_HOME e PATH
-echo "JAVA_HOME:"
-echo $JAVA_HOME
-
-echo "PATH:"
-echo $PATH
+echo "Instalação concluída. Reinicie o sistema para aplicar as configurações."
