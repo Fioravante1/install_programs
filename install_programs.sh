@@ -259,3 +259,18 @@ echo "Verificando os grupos do usuário..."
 groups
 
 echo "Instalação concluída. Reinicie o sistema para aplicar as configurações."
+
+# Verifica se o usuário é root
+if [ "$(id -u)" != "0" ]; then
+    echo "Este script precisa ser executado como root."
+    exit 1
+fi
+
+# Pergunta ao usuário se deseja reiniciar o sistema
+read -p "Você deseja reiniciar o sistema agora? (s/n): " choice
+case "$choice" in 
+  s|S ) echo "Reiniciando o sistema..."; sleep 5; reboot;;
+  n|N ) echo "Operação cancelada."; exit 0;;
+  * ) echo "Opção inválida. Operação cancelada."; exit 1;;
+esac
+
